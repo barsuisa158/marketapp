@@ -40,7 +40,7 @@ app.use("/images", express.static("images"));
 const indexController = require("./controllers/controller");
 app.use("/", indexController);
 
-const port = 6060;
+const port = 3010;
 app.listen(port, function () {
   console.log(`server is runing vie ${port}`);
 });
