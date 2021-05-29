@@ -1,46 +1,58 @@
-const express = require("express");
 const bodyParser = require("body-parser");
+const express = require("express");
 const path = require("path");
 const multer = require("multer");
 const csrf = require("csurf");
 const mongoose = require("mongoose");
 const session = require("express-session");
+const { request, response } = require("express");
 const MongoDBStore = require("connect-mongodb-session")(session);
 
 const app = express();
 
-//use  body parser
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json);
-
-//set up views
-app.set("view engine", "ejs");
+//SET UP VIEWS
+app.set("view engine", "ejs"); // צד שמאל באיזה מנוע אנחנו רוצים להשתמש ובצד ימין איזה תיקייה או ספריה
 app.set("views", "views");
+const csurfProtection = csrf();
 
-//multer - path - upload files
+//USE BODY PARSER
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+//MULTER - PATH - UPLOAD FILES
 //1
-//prems
-const fileStorge = multer.diskStorage({
-  destination: (request, file, callbake) => {
-    callbake(null, "public/images");
+const fileStorage = multer.diskStorage({
+  destination: (request, file, callback) => {
+    //פונקצית פרמס שעושה 2 פעולות
+    callback(null, "public/images");
   },
-  filename: (request, file, callbake) => {
-    callbake(null, file.originalname);
+  filename: (request, file, callback) => {
+    callback(null, file.originalname);
   },
 });
 //2
 app.use(
-  multer({ storage: fileStorge, limits: { fileSize: 25033697 } }).array("image")
-);
-
-app.use(express.static(path.join(__dirname, "public")));
-
+  multer({ storage: fileStorage, limits: { fieldSize: 25033697 } }).array(
+    "image"
+  )
+); //קובע חוק באתר שכל השדות של התמונות יהיו אימג
+app.use(express.static(path.join(__dirname, "public"))); //איזה תיקייה היא התיקייה הציבורית שפתוחה לתמונות ולמה שצריף
 app.use("/images", express.static("images"));
 
-const indexController = require("./controllers/controller");
-app.use("/", indexController);
+const indexController = require("./controllers/index");
 
-const port = 3010;
+app.use("/", indexController);
+//1
+
+//2
+app.use(csurfProtection);
+//3
+app.use((request, response, next) => {
+  response.locals.csurfToken = request.csurfToken();
+  next();
+});
+
+const port = 6060;
 app.listen(port, function () {
-  console.log(`server is runing vie ${port}`);
+  console.log(`server is running via ${port}`);
 });
