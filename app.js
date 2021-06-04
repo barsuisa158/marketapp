@@ -10,13 +10,13 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 
 const app = express();
 
-//SET UP VIEWS
-app.set("view engine", "ejs"); // צד שמאל באיזה מנוע אנחנו רוצים להשתמש ובצד ימין איזה תיקייה או ספריה
-app.set("views", "views");
-
 //USE BODY PARSER
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
+//SET UP VIEWS
+app.set("view engine", "ejs"); // צד שמאל באיזה מנוע אנחנו רוצים להשתמש ובצד ימין איזה תיקייה או ספריה
+app.set("views", "views");
 
 //MULTER - PATH - UPLOAD FILES
 //1
@@ -29,7 +29,7 @@ const fileStorage = multer.diskStorage({
     callback(null, file.originalname);
   },
 });
-//2
+
 app.use(
   multer({ storage: fileStorage, limits: { fieldSize: 25033697 } }).array(
     "image"
@@ -38,25 +38,27 @@ app.use(
 app.use(express.static(path.join(__dirname, "public"))); //איזה תיקייה היא התיקייה הציבורית שפתוחה לתמונות ולמה שצריף
 app.use("/images", express.static("images"));
 
+//1 תיצור לי איזשהי הגנה
 const csurfProtection = csrf();
 
 const mongo_uri =
   "mongodb+srv://bar:bar250697@bar.pqj9f.mongodb.net/marketNew?retryWrites=true&w=majority";
 const store = new MongoDBStore({
   uri: mongo_uri,
-  collection: "sessions",
+  collection: "session",
 });
-//2
+
 app.use(
   session({
-    secret: 'pt]c=`"DII%7IYq0Ut1{',
+    secret: "d7zoqLsQWdIHkWrt9F1KLRaMTIHg41at",
     resave: false,
     saveUninitialized: false,
     store: store,
   })
 );
+
 app.use((request, response, next) => {
-  if (!request.session.account) {
+  if (!request.session.ccount) {
     return next();
   }
   account
@@ -68,18 +70,27 @@ app.use((request, response, next) => {
     .catch((error) => console.log(error));
 });
 
+//2 תגני כל הזמן
 app.use(csurfProtection);
-//3
+//3 מסבירה לו איך להשתמש
 app.use((request, response, next) => {
   response.locals.csrfToken = request.csrfToken();
   next();
 });
+//2
 
 const indexController = require("./controllers/index");
-
+const { runInNewContext } = require("vm");
 app.use("/", indexController);
 
+const actionsController = require("./controllers/actions");
+app.use("/actions", actionsController);
+
+const dashboardController = require("./controllers/dashboard");
+app.use("/dashboard", dashboardController);
+
 const port = 6060;
+
 mongoose
   .connect(mongo_uri, {
     useNewUrlParser: true,
