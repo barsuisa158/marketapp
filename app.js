@@ -13,7 +13,6 @@ const app = express();
 //SET UP VIEWS
 app.set("view engine", "ejs"); // צד שמאל באיזה מנוע אנחנו רוצים להשתמש ובצד ימין איזה תיקייה או ספריה
 app.set("views", "views");
-const csurfProtection = csrf();
 
 //USE BODY PARSER
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -39,20 +38,58 @@ app.use(
 app.use(express.static(path.join(__dirname, "public"))); //איזה תיקייה היא התיקייה הציבורית שפתוחה לתמונות ולמה שצריף
 app.use("/images", express.static("images"));
 
-const indexController = require("./controllers/index");
+const csurfProtection = csrf();
 
-app.use("/", indexController);
-//1
-
+const mongo_uri =
+  "mongodb+srv://bar:bar250697@bar.pqj9f.mongodb.net/marketNew?retryWrites=true&w=majority";
+const store = new MongoDBStore({
+  uri: mongo_uri,
+  collection: "sessions",
+});
 //2
+app.use(
+  session({
+    secret: 'pt]c=`"DII%7IYq0Ut1{',
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+  })
+);
+app.use((request, response, next) => {
+  if (!request.session.account) {
+    return next();
+  }
+  account
+    .findById(request.session.account._id)
+    .then((account) => {
+      request.account = account;
+      next();
+    })
+    .catch((error) => console.log(error));
+});
+
 app.use(csurfProtection);
 //3
 app.use((request, response, next) => {
-  response.locals.csurfToken = request.csurfToken();
+  response.locals.csrfToken = request.csrfToken();
   next();
 });
 
+const indexController = require("./controllers/index");
+
+app.use("/", indexController);
+
 const port = 6060;
-app.listen(port, function () {
-  console.log(`server is running via ${port}`);
-});
+mongoose
+  .connect(mongo_uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false,
+  })
+  .then((database_connect_results) => {
+    console.log(database_connect_results);
+    app.listen(port, function () {
+      console.log(`Server is running via ${port}`);
+    });
+  })
+  .catch((error) => console.log(error));

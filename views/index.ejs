@@ -28,7 +28,7 @@
         >
           <input type="file" multiple name="image" class="form-control" />
         </form>
-        <input type="hidden" name="_csrf" value="<% csurfToken %>" />
+        <input type="text" name="_csrf" value="<%= csrfToken %>" />
         <input
           style="margin-top: 10px"
           type="submit"
